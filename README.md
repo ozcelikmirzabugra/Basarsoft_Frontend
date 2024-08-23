@@ -1,1 +1,0 @@
-# Basarsoft_Frontend
