@@ -22,12 +22,8 @@ function openAddPointPanel() {
               <h3>Enter Point Details</h3>
               <form id="point-form">
                   <div class="input-group">
-                      <label for="x-input">X:</label>
-                      <input type="text" id="x-input" name="x" required>
-                  </div>
-                  <div class="input-group">
-                      <label for="y-input">Y:</label>
-                      <input type="text" id="y-input" name="y" required>
+                      <label for="wkt-input">WKT:</label>
+                      <input type="text" id="wkt-input" name="x" required>
                   </div>
                   <div class="input-group">
                       <label for="name-input">Name:</label>
@@ -43,35 +39,37 @@ function openAddPointPanel() {
   });
 
   document.getElementById('point-form').addEventListener('submit', function(event) {
-      event.preventDefault(); 
-
-      const XCoordinate = parseFloat(document.getElementById('x-input').value);
-      const YCoordinate = parseFloat(document.getElementById('y-input').value);
-      const Name = document.getElementById('name-input').value;
-
-      console.log('Gönderilen veriler:', {XCoordinate, YCoordinate, Name });
-
-      fetch('http://localhost:5275/api/Home', {
-          method: 'POST',
-          headers: {
-              'accept': '*/*',
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({XCoordinate, YCoordinate, Name }),  
-      })
-      .then(response => {
-          if (!response.ok) {
-              return response.text().then(text => { throw new Error(text); });
-          }
-          return response.json();
-      })
-      .then(data => {
-          console.log('Başarılı:', data);
-      })
-      .catch((error) => {
-          console.error('Hata:', error);
-      });
+    event.preventDefault();  // Prevent the default form submission behavior
+  
+    const WKT = document.getElementById('wkt-input').value;  // Make sure this input exists in your form
+    const Name = document.getElementById('name-input').value;
+    
+    // Check the structure of the data being sent
+    console.log('Gönderilen veriler:', { WKT, Name });
+  
+    // Send the data to the server
+    fetch('http://localhost:5275/api/Home', {
+      method: 'POST',
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ WKT, Name }),  // Ensure that the property names match your model
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(text => { throw new Error(text); });
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Başarılı:', data);
+    })
+    .catch((error) => {
+      console.error('Hata:', error);
+    });
   });
+  
 }
 
 function openQueryPanel() {
@@ -92,8 +90,7 @@ function openQueryPanel() {
           console.log('Point ID:', point.id);
           tableRows += `
               <tr>
-                  <td>${point.XCoordinate}</td>
-                  <td>${point.YCoordinate}</td>
+                  <td>${point.WKT}</td>
                   <td>${point.Name}</td>
                   <td>
                       <button onclick="showPoint(${point.id})">Show</button>
@@ -118,8 +115,7 @@ function openQueryPanel() {
                   <table>
                       <thead>
                           <tr>
-                              <th>X</th>
-                              <th>Y</th>
+                              <th>WKT</th>
                               <th>Name</th>
                               <th>Actions</th>
                           </tr>
