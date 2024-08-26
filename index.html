@@ -1,18 +1,31 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/ol@v10.1.0/dist/ol.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.1.0/ol.css">
-
-  <title>Document</title>
-  </head>
-  <body>
-    <div id="js-map" class="map"></div>
-    <script rel="stylesheet" src="main.js">
-
-    </script>
-  </body>
-  </html>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspanel4@4.14.4/dist/jspanel.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/ol@v10.1.0/dist/ol.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.14.4/dist/jspanel.min.js"></script>  
+  <link href="https://cdn.jsdelivr.net/npm/jspanel4@4.15.0/dist/jspanel.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jspanel4@4.15.0/dist/jspanel.js"></script>
+  
+  <script src="main.js"></script>
+  
+  <title>OpenLayers Map Application</title>
+</head>
+<body>
+  <header class="navbar">
+    <nav>
+      <ul class="nav-links">
+        <li><img class="logo" src="basarsoft-logo.png" alt="logo"></li>
+        <button class="add-point">Add Point</button>
+        <button class="query">Query</button>
+        <h1>OpenLayers Map Application</h1> 
+      </ul>
+    </nav>
+  </header>
+  <div id="map" class="map"></div>
+</body>
+</html>
