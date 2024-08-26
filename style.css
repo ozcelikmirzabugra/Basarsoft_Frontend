@@ -1,138 +1,57 @@
-* {
-  box-sizing: border-box;
+/* Temel sıfırlama */
+body, button, form, select {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
-.navbar {
-  position: fixed; /* Navbar'ı sabitle */
-  top: 0; /* Üstte sabitle */
-  width: 100%; /* Tam genişlik */
-  background-color: #e3e3e3; /* Arka plan rengi */
-  color: rgb(13, 1, 102); /* Yazı rengi */
-  padding: 10px; /* İç boşluk */
-  z-index: 1000; /* Haritanın üstünde olmasını sağlar */
+.logo {
+  width:  100px;
 }
 
-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.nav-links .logo {
-  height: 50px; /* Logonun yüksekliğini ayarla */
-  width: auto; /* Orantılı genişliği koru */
-}
-
-h1 {
-  flex: 1;
-  text-align: center;
-  font-size: 1.5em; /* Yazı boyutunu ayarlayın */
-  border-right: 100px;
-}
-
-.map {
-  position: fixed;
-  width: 100%;
-  height: 100vh; /* Haritanın ekranın tamamını kaplamasını sağlar */
-  top: 0;
-  left: 0;
-}
-
-.panel-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Yatayda ortala */
-  justify-content: center; /* Dikeyde ortala */
-  height: 100%; /* İçeriğin yüksekliği panelin yüksekliğine eşit olmalı */
-  padding: 20px; /* Panel içeriğine biraz boşluk ekleyin */
-}
-
-.text-container {
-  text-align: center; /* Yazıları ortalamak için */
-}
-
-.text-container h2 {
+body {
+  font-family: Arial, sans-serif;
   margin: 0;
-  font-size: 1.5em;
 }
 
-.text-container p {
-  margin-top: 10px;
-  font-size: 1em;
+/* Harita stili */
+.map {
+  margin-top: 60px; /* Navbar yüksekliğine göre ayarlanmalı */
+  width: 100vw;
+  height: 100vh; /* Navbar yüksekliğini hesaba katar */
+  border: 1px solid #ccc;
 }
 
-.button-container, #form-container, #action-container {
-  margin-top: 20px; /* İçerikler arasına boşluk ekleyin */
-  text-align: center; /* İçerikleri ortalamak için */
+/* Form ve buton stilleri */
+form {
+  margin: 20px;
 }
 
-.panel-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 20px;
-  margin: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s;
-}
-
-.panel-btn:hover {
-  background-color: #0056b3;
-}
-
-#form-container, #action-container {
-  display: none; /* Başlangıçta gizle */
-}
-
-#input-form {
-  display: flex;
-  flex-direction: column; /* Form elemanlarını dikey olarak hizala */
-  align-items: center; /* Form elemanlarını ortala */
-  margin-top: 20px;
-}
-
-#input-form label {
-  display: block;
-  margin-top: 10px;
-}
-
-#input-form input {
-  margin-left: 10px;
+select {
   padding: 5px;
-  width: 150px; /* Input genişliğini ayarla */
 }
 
-#input-form button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
+button {
+  background-color: #ffcc33;
   border: none;
-  border-radius: 5px;
+  color: #333;
+  padding: 10px 20px;
+  font-size: 1rem;
   cursor: pointer;
-  font-size: 16px;
   transition: background-color 0.3s;
-}
-
-#input-form button:hover {
-  background-color: #0056b3;
-}
-
-#action-container button {
-  background-color: #28a745; /* Yeşil buton */
   margin: 5px;
 }
 
-#action-container button:hover {
-  background-color: #218838;
+button:hover {
+  background-color: #e0a900;
+}
+
+button:focus {
+  outline: none; /* Dış çizgi kaldırma */
+}
+
+button:disabled {
+  background-color: #ddd;
+  color: #999;
+  cursor: not-allowed;
 }
