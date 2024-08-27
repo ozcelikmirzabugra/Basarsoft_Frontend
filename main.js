@@ -65,12 +65,12 @@ function openAddPointPanel(WKT = '', Name = '') {
                 })
                 .then(data => {
                     console.log('Success:', data);
-                    alert('Point added successfully!');
+                    // alert('Point added successfully!'); // TODO
                     panel.close();
                 })
                 .catch((error) => {
                     console.error('Error:', error);
-                    alert('Failed to add point: ' + error.message);
+                    // alert('Failed to add point: ' + error.message);
                 });
             });
         },
@@ -139,7 +139,7 @@ function openQueryPanel() {
                     </div>
                 `,
                 callback: function(panel) {
-                    $('#points-table').DataTable();
+                    $('#points-table').DataTable();  
                 },
                 onwindowresize: true,
             });
@@ -166,13 +166,35 @@ function showPoint(id) {
     })
     .then(point => {
         console.log('Point details:', point);
-        highlightPointOnMap(point.WKT);
+
+        // Validate and log the WKT data
+        const wkt = point.data.wkt;
+        console.log('WKT data:', wkt);
+
+        // Try parsing the WKT data
+        try {
+            const format = new ol.format.WKT();
+            const feature = format.readFeature(wkt);
+
+            const coords = feature.getGeometry().getCoordinates();
+            highlightPointOnMap(ol.proj.toLonLat(coords));
+        } catch (error) {
+            console.error('Error parsing WKT:', error);
+        }
     })
     .catch(error => {
-        // console.error('Error fetching point:', error);
-        // alert('Failed to fetch point details: ' + error.message);
+        console.error('Error fetching point:', error);
     });
 }
+
+
+
+function extractCoordsFromWKT(wkt) {
+    // Example function to extract coordinates from WKT string
+    const match = wkt.match(/\(([^)]+)\)/);
+    return match ? match[1].split(' ').map(Number) : [0, 0];
+}
+
 
 function updatePoint(id) {
     const newName = prompt('Enter a new name for this point:');
@@ -293,7 +315,7 @@ function init() {
     function addInteractions() {
         const geometryType = typeSelect.value;
         if (!geometryType) {
-            alert('Please select a geometry type before drawing.');
+            // alert('Please select a geometry type before drawing.');
             return;
         }
     
@@ -326,43 +348,69 @@ function init() {
     addInteractions();
 }
 
-function highlightPointOnMap(WKT) {
+function highlightPointOnMap(coords) {
     if (!window.map) {
         alert('Map is not initialized.');
         return;
     }
 
-    const format = new ol.format.WKT();
-    const feature = format.readFeature(WKT, {
-        dataProjection: 'EPSG:4326',
-        featureProjection: 'EPSG:3857',
-    });
+    try {
+        // Ensure coords is an array with two elements (longitude and latitude)
+        if (!Array.isArray(coords) || coords.length !== 2) {
+            throw new Error('Invalid coordinates format.');
+        }
 
-    const vectorSource = new ol.source.Vector({
-        features: [feature],
-    });
+        // Convert coordinates to OpenLayers format
+        const [x, y] = coords;
 
-    const vectorLayer = new ol.layer.Vector({
-        source: vectorSource,
-        style: new ol.style.Style({
-            fill: new ol.style.Fill({
-                color: 'rgba(255, 255, 255, 0.2)',
-            }),
-            stroke: new ol.style.Stroke({
-                color: '#ffcc33',
-                width: 2,
-            }),
-            image: new ol.style.Circle({
-                radius: 7,
+        // Assuming coords are in EPSG:4326 (longitude, latitude), you might not need conversion
+        const feature = new ol.Feature({
+            geometry: new ol.geom.Point(ol.proj.fromLonLat([x, y])),
+            name: 'Highlighted Point'
+        });
+
+        // Create a vector source and layer to display the feature
+        const vectorSource = new ol.source.Vector({
+            features: [feature]
+        });
+
+        const vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            style: new ol.style.Style({
                 fill: new ol.style.Fill({
-                    color: '#ffcc33',
+                    color: 'rgba(255, 255, 255, 0.2)'
                 }),
-            }),
-        }),
-    });
+                stroke: new ol.style.Stroke({
+                    color: '#ffcc33',
+                    width: 2
+                }),
+                image: new ol.style.Circle({
+                    radius: 7,
+                    fill: new ol.style.Fill({
+                        color: '#ffcc33'
+                    })
+                })
+            })
+        });
 
-    window.map.addLayer(vectorLayer);
-    window.map.getView().fit(vectorSource.getExtent(), { duration: 1000 });
+        // Remove any previous vector layers to avoid clutter
+        const layers = window.map.getLayers().getArray();
+        layers.forEach(layer => {
+            if (layer instanceof ol.layer.Vector) {
+                window.map.removeLayer(layer);
+            }
+        });
+
+        // Add the new vector layer to the map
+        window.map.addLayer(vectorLayer);
+
+        // Fit the map view to the extent of the feature
+        window.map.getView().fit(vectorSource.getExtent(), { duration: 1000, padding: [50, 50, 50, 50] });
+    } catch (error) {
+        console.error('Error highlighting point on map:', error);
+    }
 }
+
+
 
 document.addEventListener('DOMContentLoaded', init);
