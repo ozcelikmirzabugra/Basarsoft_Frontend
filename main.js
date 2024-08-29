@@ -117,8 +117,8 @@ function openQueryPanel() {
                 theme: 'dark',
                 headerTitle: 'Query Points',
                 panelSize: {
-                    width: () => { return Math.min(500, window.innerWidth * 0.8); },
-                    height: () => { return Math.min(400, window.innerHeight * 0.6); }
+                    width: () => { return Math.min(800, window.innerWidth * 0.8); },
+                    height: () => { return Math.min(800, window.innerHeight * 0.6); }
                 },
                 animateIn: 'jsPanelFadeIn',
                 content: `
@@ -167,17 +167,21 @@ function showPoint(id) {
     .then(point => {
         console.log('Point details:', point);
 
-        // Validate and log the WKT data
         const wkt = point.data.wkt;
         console.log('WKT data:', wkt);
 
-        // Try parsing the WKT data
         try {
             const format = new ol.format.WKT();
             const feature = format.readFeature(wkt);
 
-            const coords = feature.getGeometry().getCoordinates();
-            highlightPointOnMap(ol.proj.toLonLat(coords));
+            const geometry = feature.getGeometry();
+            highlightGeometryOnMap(geometry);
+
+            // Close the Query Points Panel
+            const queryPanel = document.querySelector('.jsPanel-content');
+            if (queryPanel) {
+                queryPanel.parentElement.close(); // Assuming .jsPanel-content is the class for your panel
+            }
         } catch (error) {
             console.error('Error parsing WKT:', error);
         }
@@ -189,6 +193,7 @@ function showPoint(id) {
 
 
 
+
 function extractCoordsFromWKT(wkt) {
     // Example function to extract coordinates from WKT string
     const match = wkt.match(/\(([^)]+)\)/);
@@ -196,42 +201,178 @@ function extractCoordsFromWKT(wkt) {
 }
 
 
+let isUpdating = false; // Güncelleme modunu kontrol etmek için değişken
+let updateFeature = null; // Güncellenen özelliği saklamak için değişken
+let clickCount = 0; // Tıklama sayısını takip etmek için değişken
+let lastCoordinate = null; // Son tıklanan koordinat
+
 function updatePoint(id) {
-    const newName = prompt('Enter a new name for this point:');
-    
-    if (newName === null) {
-        return;
-    }
+    isUpdating = true;
+    clickCount = 0; // Tıklama sayısını sıfırla
+    lastCoordinate = null; // Son tıklanan koordinatı sıfırla
 
-    const trimmedName = newName.trim();
-    if (!trimmedName) {
-        alert('Name cannot be empty.');
-        return;
-    }
-
-    fetch(`http://localhost:5275/api/Home/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, Name: trimmedName }),
-    })
+    fetch(`http://localhost:5275/api/Home/${id}`)
     .then(response => {
         if (!response.ok) {
             return response.text().then(text => { throw new Error(text); });
         }
         return response.json();
     })
-    .then(data => {
-        console.log('Point updated successfully:', data);
-        // alert('Point updated successfully!');
-        refreshQueryPanel();
+    .then(point => {
+        const wkt = point.data.wkt;
+        console.log('WKT data:', wkt);
+
+        // Close the Query Points Panel
+        const queryPanel = document.querySelector('.jsPanel-content');
+        if (queryPanel) {
+            queryPanel.parentElement.close(); // Assuming .jsPanel-content is the class for your panel
+        }
+
+        const format = new ol.format.WKT();
+        const feature = format.readFeature(wkt);
+        const geometry = feature.getGeometry();
+
+        // Move to the feature's location
+        highlightGeometryOnMap(geometry);
+
+        // Enable drag-and-drop for the feature
+        const modifyInteraction = new ol.interaction.Modify({
+            features: new ol.Collection([feature]),
+        });
+        window.map.addInteraction(modifyInteraction);
+
+        modifyInteraction.on('modifyend', function(event) {
+            const modifiedGeometry = event.features.item(0).getGeometry();
+            const modifiedWKT = format.writeGeometry(modifiedGeometry);
+            console.log('Modified WKT:', modifiedWKT);
+
+            fetch(`http://localhost:5275/api/Home/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id, WKT: modifiedWKT }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Point updated successfully:', data);
+                window.map.removeInteraction(modifyInteraction);  // Disable editing after updating
+                isUpdating = false; // Güncellemeyi bitir
+                alert('Update finished!'); // Bilgilendirme
+                console.log('zort5')
+                openUpdatePanel(); // Güncelleme panelini aç
+            })
+            .catch((error) => {
+                console.error('Error updating point:', error);
+            });
+        });
+
+        // Dinle: tıklama olayını takip et
+        window.map.on('click', function(event) {
+            if (isUpdating) {
+                const coordinate = event.coordinate;
+                if (lastCoordinate && clickCount > 0) {
+                    const distance = ol.sphere.getDistance(lastCoordinate, coordinate);
+                    if (distance < 10) { // Tıklama mesafesini ayarla (örneğin, 10 piksel)
+                        // Aynı noktaya iki kez tıklanmışsa güncellemeyi bitir
+                        finishUpdate();
+                    }
+                }
+                lastCoordinate = coordinate;
+                clickCount++;
+            }
+        });
+        
     })
-    .catch((error) => {
-        console.error('Error updating point:', error);
-        // alert('Failed to update point: ' + error.message);
+    .catch(error => {
+        console.error('Error fetching point:', error);
     });
 }
+
+function finishUpdate() {
+    // Güncellemeyi bitir ve panel aç
+    isUpdating = false;
+    window.map.removeInteraction(window.map.getInteractions().getArray().find(interaction => interaction instanceof ol.interaction.Modify));
+    // alert('Update finished!');
+    openUpdatePanel(); // Güncelleme panelini aç
+}
+
+function openUpdatePanel(WKT = '', Name = '') {
+    jsPanel.create({
+        theme: 'dark',
+        headerTitle: 'Update Point Details',
+        panelSize: {
+            width: () => { return Math.min(400, window.innerWidth * 0.8); },
+            height: () => { return Math.min(300, window.innerHeight * 0.5); }
+        },
+        animateIn: 'jsPanelFadeIn',
+        content: `
+            <div class="panel-content">
+                <h3>Update Point Details</h3>
+                <form id="update-form">
+                    <div class="input-group">
+                        <label for="wkt-input">WKT:</label>
+                        <input type="text" id="wkt-input" name="wkt" required value="${WKT}">
+                    </div>
+                    <div class="input-group">
+                        <label for="name-input">Name:</label>
+                        <input type="text" id="name-input" name="name" value="${Name}">
+                    </div>
+                    <div class="input-group">
+                        <button type="submit">Save</button>
+                    </div>
+                </form>
+            </div>
+        `,
+        callback: function(panel) {
+            document.getElementById('update-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const updatedWKT = document.getElementById('wkt-input').value.trim();
+                const updatedName = document.getElementById('name-input').value.trim();
+
+                if (!updatedWKT) {
+                    alert('WKT field is required.');
+                    return;
+                }
+
+                console.log('Updated data:', { updatedWKT, updatedName });
+
+                fetch(`http://localhost:5275/api/Home/${pointId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Accept': '*/*',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ WKT: updatedWKT, Name: updatedName }),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Update successful:', data);
+                    panel.close(); // Paneli kapat
+                })
+                .catch((error) => {
+                    console.error('Error updating point:', error);
+                });
+            });
+        },
+        onwindowresize: true,
+    });
+}
+
+
+
+
 
 function deletePoint(id) {
     if (confirm('Are you sure you want to delete this point?')) {
@@ -254,6 +395,7 @@ function deletePoint(id) {
             // alert('Failed to delete point: ' + error.message);
         });
     }
+    // refreshQueryPanel(); 
 }
 
 function createMapView(centerCoords, zoomLevel) {
@@ -411,6 +553,59 @@ function highlightPointOnMap(coords) {
     }
 }
 
+function highlightGeometryOnMap(geometry) {
+    if (!window.map) {
+        alert('Map is not initialized.');
+        return;
+    }
+
+    try {
+        const feature = new ol.Feature({
+            geometry: geometry,
+            name: 'Highlighted Feature'
+        });
+
+        const vectorSource = new ol.source.Vector({
+            features: [feature]
+        });
+
+        const vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            style: new ol.style.Style({
+                fill: new ol.style.Fill({
+                    color: 'rgba(255, 255, 255, 0.2)'
+                }),
+                stroke: new ol.style.Stroke({
+                    color: '#ffcc33',
+                    width: 2
+                }),
+                image: new ol.style.Circle({
+                    radius: 7,
+                    fill: new ol.style.Fill({
+                        color: '#ffcc33'
+                    })
+                })
+            })
+        });
+
+        const layers = window.map.getLayers().getArray();
+        layers.forEach(layer => {
+            if (layer instanceof ol.layer.Vector) {
+                window.map.removeLayer(layer);
+            }
+        });
+
+        window.map.addLayer(vectorLayer);
+        window.map.getView().fit(vectorSource.getExtent(), { duration: 1000, padding: [50, 50, 50, 50] });
+    } catch (error) {
+        console.error('Error highlighting geometry on map:', error);
+    }
+}
+
+
+
+
 
 
 document.addEventListener('DOMContentLoaded', init);
+
