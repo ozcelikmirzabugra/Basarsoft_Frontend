@@ -231,6 +231,7 @@ function updatePoint(id) {
         const format = new ol.format.WKT();
         const feature = format.readFeature(wkt);
         const geometry = feature.getGeometry();
+        highlightGeometryOnMap(geometry);
 
         // Remove previous vector layers before adding updated ones
         const layers = window.map.getLayers().getArray();
@@ -733,9 +734,4 @@ function highlightGeometryOnMap(geometry) {
 }
 
 
-
-
-
-
 document.addEventListener('DOMContentLoaded', init);
-
