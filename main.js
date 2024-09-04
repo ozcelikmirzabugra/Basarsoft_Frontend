@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.query').addEventListener('click', function() {
         openQueryPanel(); 
     });
+
+    // init();
 });
 
 function openAddPointPanel(WKT = '', Name = '') {
@@ -112,7 +114,6 @@ function openQueryPanel() {
                     </tr>
                 `;
             });
-
             jsPanel.create({
                 theme: 'dark',
                 headerTitle: 'Query Points',
@@ -191,26 +192,7 @@ function showPoint(id) {
     });
 }
 
-
-
-
-function extractCoordsFromWKT(wkt) {
-    // Example function to extract coordinates from WKT string
-    const match = wkt.match(/\(([^)]+)\)/);
-    return match ? match[1].split(' ').map(Number) : [0, 0];
-}
-
-
-let isUpdating = false; // Güncelleme modunu kontrol etmek için değişken
-let updateFeature = null; // Güncellenen özelliği saklamak için değişken
-let clickCount = 0; // Tıklama sayısını takip etmek için değişken
-let lastCoordinate = null; // Son tıklanan koordinat
-
 function updatePoint(id) {
-    isUpdating = true;
-    clickCount = 0; // Reset click count
-    lastCoordinate = null; // Reset last coordinate
-
     fetch(`http://localhost:5275/api/Home/${id}`)
     .then(response => {
         if (!response.ok) {
@@ -296,32 +278,6 @@ function updatePoint(id) {
             .then(data => {
                 console.log('Point updated successfully:', data);
                 window.map.removeInteraction(modifyInteraction);  // Disable editing after updating
-                isUpdating = false; // End updating mode
-
-                // When you click twice to the same point, show updated WKT
-                window.map.on('click', function(event) {
-                    if (isUpdating) {
-                        const coordinate = event.coordinate;
-                        if (lastCoordinate && clickCount > 0) {
-                            const distance = ol.sphere.getDistance(lastCoordinate, coordinate);
-                            if (distance < 10) { // Set distance tolerance (e.g., 10 meters)
-                                clickCount++;
-                            } else {
-                                clickCount = 1;
-                            }
-                        } else {
-                            clickCount = 1;
-                        }
-                        lastCoordinate = coordinate;
-
-                        if (clickCount === 2) { // End update on 2nd click
-                            clickCount = 0; // Reset click count
-
-                            // Show panel with updated WKT
-                            openCoordinatesPanel(coordinate, updatedWKT);
-                        }
-                    }
-                });
             })
             .catch((error) => {
                 console.error('Error updating point:', error);
@@ -331,6 +287,7 @@ function updatePoint(id) {
     .catch(error => {
         console.error('Error fetching point:', error);
     });
+    // finishUpdate();
 }
 
 
@@ -396,34 +353,9 @@ function loadExistingPolygons() {
     });
 }
 
-
-
-function openCoordinatesPanel(coordinate, updatedWKT) {
-    jsPanel.create({
-        theme: 'dark',
-        headerTitle: 'Updated Coordinates',
-        panelSize: {
-            width: () => { return Math.min(400, window.innerWidth * 0.8); },
-            height: () => { return Math.min(300, window.innerHeight * 0.5); }
-        },
-        animateIn: 'jsPanelFadeIn',
-        content: `
-            <div class="panel-content">
-                <h3>Updated Feature Details</h3>
-                <p>Coordinates: ${coordinate.join(', ')}</p>
-                <p>Updated WKT: ${updatedWKT}</p>
-                <button onclick="this.parentElement.parentElement.close()">Close</button>
-            </div>
-        `,
-        onwindowresize: true,
-    });
-}
-
-
-
 function finishUpdate() {
     // Güncellemeyi bitir ve panel aç
-    isUpdating = false;
+    // isUpdating = false;
     window.map.removeInteraction(window.map.getInteractions().getArray().find(interaction => interaction instanceof ol.interaction.Modify));
     // alert('Update finished!');
     openUpdatePanel(); // Güncelleme panelini aç
